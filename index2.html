@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VisualOps</title>
+  <meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self' https://cdn.jsdelivr.net;
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  img-src 'self' data:;
+  font-src 'self' https://fonts.gstatic.com;
+  connect-src 'self' https://api.example.com;
+  frame-src https://www.youtube.com;
+  object-src 'none';
+  base-uri 'self';
+  form-action 'self';
+  manifest-src 'self';
+">
+
+
+
+<link rel="stylesheet" href="codemirror/codemirror.min.css">
+<link rel="stylesheet" href="codemirror/material.css">
+
+
+
+  <link rel="stylesheet" href="./node_modules/xterm/css/xterm.css" />
+  <link rel="stylesheet" href="./styles.css" />
+ 
+</head>
+<body>
+  
+
+  
+  <div class="header-wrapper" style="display: flex; justify-content: space-between; align-items: center;" >
+    <div>
+    <button id="dockerDashboardButton" class="tog-dashboard">Docker Dashboard</button>
+    <button id="kubernetesDashboardButton" class="checkMinikubeStatus tog-dashboard">Kubernetes Dashboard</button>
+    <button id="showHistoryButton" class="btn">Command History</button>
+  </div>
+    <!-- <button id="jenkinsDashboardButton">Jenkins</button> -->
+    <div style="display: flex; margin-right: 1em;">
+    <div class="toggle-container" id="darkModeToggle">
+    <div class="toggle-button" id="toggleButton"></div>
+    <span class="toggle-label left">Forest</span>
+    <span class="toggle-label right">Candy</span>
+  </div>
+  </div>
+  
+
+  </div>
+
+  <!-- <div id="historyModal" class="modal dang">
+    <div class="modal-content">
+      <div class="command-history-label">
+      
+      <h3 class="command-history-text">Command History</h3>
+      <span class="close">&times;</span>
+    </div>
+      <div id="commandHistory"></div>
+    </div>
+  </div> -->
+
+
+ 
+
+ 
+ 
+
+
+  <div id="historyModal" class="modal">
+    <div class="modal-content">
+      <div class="sticky-header">
+        <h3 style="color: white;">Command History</h3>
+        <span class="close">&times;</span>
+      </div>
+      <div id="commandHistory"></div>
+    </div>
+  </div>
+
+
+
+
+
+
+
+
+
+
+  <div id="dockerDashboard" class="dashboard">
+    <div class="terminal-container">
+      <div id="dockerTerminalContainer" class="terminal"></div>
+      <div class="info-wrapper">
+    
+        <div class="search-wrapper">
+          <span class="info-wrapper-title">DOCKER IMAGES</span>
+        <input type="text" id="searchDockerImages" placeholder="Search Docker Images...">
+        <!-- <img src="./assets/icons/search.png" alt="searchIcon" class="search-icon"> -->
+      </div>
+        <div id="dockerImages"></div>
+       
+        <div class="search-wrapper">
+           <span class="info-wrapper-title">DOCKER CONTAINERS</span>
+        <input type="text" id="searchDockerContainers" placeholder="Search Docker Containers...">
+        <!-- <img src="./assets/icons/search.png" alt="searchIcon" class="search-icon">s -->
+      </div>
+        <div id="dockerContainers"></div>
+      </div>
+    </div>
+
+    <div class="main-wrapper">
+      <div class="left-inner-wrapper">
+        <div id="dockerRunInput"></div>
+        <div class="input-field-wrapper">
+        <div class="input-field">
+          <label for="imageNameInput" class="input-label">IMAGE NAME</label>
+          <input type="text" id="imageNameInput" placeholder="Enter Docker image name">
+        </div>
+        <div class="input-field">
+          <label for="containerNameInput" class="input-label">CONTAINER NAME</label>
+          <input type="text" id="containerNameInput" placeholder="Enter container name" class="input-field">
+        </div>
+        <div class="input-field">
+          <label for="containerIdInput" class="input-label">CONTAINER ID</label>
+          <input type="text" id="containerIdInput" placeholder="Enter container ID" class="input-field">
+        </div>
+      </div>
+        <div class="mapping">
+          
+          <input type="checkbox" id="portMappingCheckbox"> <span class="checkbox">Port Mapping</span>
+          <div id="mappingInput" class="mapping"></div>
+
+          <input type="checkbox" id="volumeMappingCheckbox"> <span class="checkbox">Volume Mapping</span>
+          <div id="volumeMappingInput" class="mapping"></div>
+
+        </div>
+        
+        <button id="dockerRunButton" class="btn"> <span class="active-dot"></span><span class="pre-active-dot"></span>Docker Run</button>
+
+        <div id="errorDialog" class="dialog">
+          <div class="dialog-content">
+            <span id="errorMessage" class="errorMessage"></span>
+            <button id="closeErrorDialog" class="btn">Close</button>
+          </div>
+        </div>
+
+        <div id="confirmationModal" class="modal">
+          <div class="modal-content">
+            <!-- <h3>Alert!</h3> -->
+            <!-- <span class="close">&times;</span> <br> -->
+            <p>Are you sure you want to run "docker-compose down"? This will stop and remove all containers defined in the docker-compose file.</p>
+            <label>
+              <input type="checkbox" id="dontShowWarning"> Don't show this warning again
+            </label>
+            <div style="margin-top: 10px;">
+              <button id="confirmDownButton" class="btn">Confirm</button>
+              <button class="btn" id="cancel">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <button id="dockerPsButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Docker PS</button>
+        <button id="dockerRmButton" class="btn warn-btn"> <span class="active-dot"></span><span class="pre-active-dot"></span>Docker RM</button>
+        <button id="dockerImagesButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Docker Images</button>
+        
+        <button id="dockerPsAButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Docker PS A</button>
+        <button id="dockerStopButton" class="btn warn-btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Docker Stop</button>
+        <button id="dockerRmiButton" class="btn warn-btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Docker RMI</button>
+        <button id="dockerPullButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Docker Pull</button>
+        <button id="dockerInfoButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Docker Info</button>
+        <button id="dockerStartButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Docker Start</button>
+        <button id="dockerInspectButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Docker Inspect</button>
+        <button id="dockerPauseButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Docker Pause</button>
+        <button id="dockerUnpauseButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Docker Unpause</button>
+        <button id="clearDockerTerminalButton" class="btn clear-terminal-btn"><span class="terminal-active-dot"></span><span class="pre-terminal-active-dot"></span>Clear Terminal</button>
+      
+
+<!-- ************************NOTIFY-START********************************** -->
+        <div id="notify"  class="notification">
+         <div class="notification-wrapper">
+          <!-- <div class="container"> -->
+            <img id="exec-confir-gif" src="./assets/loader2.gif" alt="Notification-gif" width="40" height="40">
+            <span> <p class="notification-text">Your command is being executed in background &#8987;</p></span>
+          <!-- </div> -->
+          
+         </div>
+          
+          </div>
+          <span class="text-copied-notification" id="textCopied">Copied!</span>
+      </div>
+<!-- ***************************NOTIFY-END******************************* -->
+
+<!-- ****************************EXECUTION CONFIRM FOR ERROR POPUP -START****************************** -->
+
+
+<!-- <div id="exec-error" class="exec-error-alert">
+  <div class="exec-error-alert-wrapper">
+<span id="exec-error-message" class="exec-error-alert-content"></span>
+</div>
+</div> -->
+
+<!-- ****************************EXECUTION CONFIRM FOR ERROR POPUP -END****************************** -->
+
+<!-- ****************************EXECUTION CONFIRM FOR OUTPUT POPUP -START****************************** -->
+<div id="exec-confir-output" class="exec-success-alert">
+  <!-- <main class="container">
+		<div class="item">
+			<i class="loader --4"></i>
+		</div> -->
+  <p>your command executed</p>
+  </div>
+  
+  <!-- ****************************EXECUTION CONFIRM FOR OUTPUT POPUP -END****************************** -->
+
+
+
+  <!-- ######################### HOME PAGE STARTS ################################# -->
+      <div id="loader" style="display: flex;">
+        <!-- <div class="spinner"></div> -->
+        <img id="exec-confir-gif" src="./assets/loader2.gif" alt="main-page-logo-gif" >
+        <div style="transform: translateY(-50px); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+        <h1 style="color: white; text-shadow: 2px 2px 5px rgb(93,224,230);">WELCOME TO VISUAL OPS.</h1>
+        <div id="progress-bar" class="progress-bar-skeleton">
+          <div id="myBar" class="progress-bar" style="width:0%"></div>
+        </div>
+        <button id="launch"><span style="font-size: larger;">Launch </span><img id="exec-confir-gif" src="./assets/icons/launchIcon.png" alt="launchIcon" width="15" height="15" ></button>
+       </div>
+      </div>
+
+       <!-- ######################### HOME PAGE ENDS ################################# -->
+
+
+      <div id="dockerCommandDialog" class="modal">
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <h2>Enter Container ID</h2>
+          <div class="input-field">
+            <input type="text" id="commandContainerIdInput" placeholder="Enter Container ID">
+          </div>
+          <button id="confirmCommandButton">Confirm</button>
+        </div>
+      </div>
+
+      
+
+
+      <div id="composeModal" class="modal">
+        <div class="editor-modal-content">
+          <div class="sticky-header">
+            <h4>Create Docker Compose File</h4>
+            <span class="close">&times;</span>
+          </div>
+          <div id="composeEditor"></div>
+          <button id="saveComposeBtn" class="btn">Save As</button>
+          <!-- <button id="uploadComposeBtn" class="btn">Upload</button>/ -->
+        </div>
+      </div>
+
+
+
+
+      <div class="right-inner-wrapper">
+        <div id="dockerComposeCommands">
+          <div class="input-field">
+            <input type="file" id="dockerComposeFileUpload" accept=".yml, .yaml" style="display: none;">
+            <span id="dockerComposeFileInput"></span>
+         
+            <label for="dockerComposeFileUpload" class="custom-file-label btn">Upload
+            <img src="./assets/icons/upload.png" alt="upload" width="15px">
+          </label>
+          
+          <div class="nfs-wrapper">
+            <span id="uploadedFileName">no file chosen</span>
+            <img src="./assets/icons/clear1.png" alt="clear" width="20px" id="clearSelection"> <span class="or" style="color: white; font-size: smaller;">or</span>
+            <div id="dockerComposeSection">
+              <button id="createComposeFileBtn" class="btn">Create Docker Compose File</button>
+            </div>
+          </div>
+          <!-- <div class="input-field">
+            <label for="containerNameInput" class="conatiner-image-label">ARGS..</label>
+            <input type="text" id="arguments" placeholder="Enter ARGS" class="input-field">
+          </div> -->
+          </div>
+          <!-- <div id="dockerComposeSection">
+            <button id="createComposeFileBtn">Create Docker Compose File</button>
+          </div> -->
+          <div style="margin-bottom: 5px;">
+            <label for="containerNameInput" class="input-label">ARGS..</label>
+            <input type="text" id="arguments" placeholder="Enter ARGS" class="input-args-field">
+          </div>
+
+          <button id="dockerComposeUpButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Docker Compose Up</button>
+          <button id="dockerComposeDownButton" class="btn warn-btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Docker Compose Down</button>
+          <button id="dockerComposeLogsButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Docker Compose Logs</button>
+          <button id="dockerComposePsButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Docker Compose PS</button>
+          <button id="dockerComposeBuildButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Docker Compose Build</button>
+          <button id="dockerComposeRunButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Docker Compose Run</button>
+          <button id="dockerComposeStartButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Docker Compose Start</button>
+          <button id="dockerComposeStopButton" class="btn warn-btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Docker Compose Stop</button>
+          <button id="dockerComposePauseButton" class="btn warn-btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Docker Compose Pause</button>
+          <button id="dockerComposeUnpauseButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Docker Compose Unpause</button>
+          
+          <button id="dockerComposeCreateButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Docker Compose Create</button>
+        </div>
+      </div>
+
+
+    </div>
+<!-- left bottom section for custom command direcct execution STARTS HERE-->
+<div class="bottom-main-wrapper">
+<div class="bottom-left-inner-wrapper">
+  
+  <div class="bottom-left-inner-wrapper-div">
+    <div style="margin-top: 10px; margin-left: 10px;">
+    <label for="imageNameInput" class="input-label" style="display: flex; position: relative; top: 0;" >WANT TO RUN YOUR OWN COMMAND?</label>
+
+    <div class="custom-command input-field">
+      <input type="text" id="customDockerCommand" placeholder="Enter your Docker command" />
+      <button id="executeCommandBtn" class="btn">Execute Command</button> 
+    </div>
+    <span id="invalidCustomCommand">Invalid command. Only Docker commands are allowed.</span>
+    <div class="input-field-wrapper" id="docker-login-wrapper" style="display: none; gap: 5px;">
+      <div class="input-field">
+        <label for="imageNameInput" class="input-label">USERNAME</label>
+        <input type="text" id="userName" placeholder="Enter Username">
+      </div>
+      <div class="input-field">
+        <label for="imageNameInput" class="input-label">PASSWORD</label>
+        <input type="password" id="password" placeholder="Enter Password">
+      </div>
+    </div>
+    <div class="login-logout-btn-wrapper">
+      <button id="dockerLoginBtn" class="btn">Docker Login</button>
+      <button id="dockerLogoutBtn" class="btn">Docker Logout</button>
+    </div>
+  </div>
+  </div>
+</div>
+<!-- left bottom section for custom command direcct execution ENDS HERE ######-->
+
+
+<!-- bottom right section for propper temporary error data  and some additional features STARTS HERE-->
+<div class="bottom-right-inner-wrapper">
+<div class="bottom-right-inner-wrapper-div" >
+  <!-- <div style="margin-top: 0.8em; margin-left: 0.8em;"> -->
+    <div id="error-log"></div><span class="error-zone-arrow" id="doc-error-zone-arrow"></span> <span class="error-zone" id="doc-error-zone">ERROR ZONE</span> 
+<!-- </div> -->
+</div>
+</div>
+</div>
+<!-- bottom right section for propper temporary error data  and some additional features ENDS HERE ######-->
+
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div id="kubernetesDashboard" class="dashboard">
+
+<!-- KUBE MODALS STARTS HERE -->
+
+
+
+<div id="kubeDefModal" class="modal">
+  <div class="editor-modal-content">
+    <div class="sticky-header">
+      <h4 style="color: white;">Create Definition File</h4>
+      <span class="close">&times;</span>
+    </div>
+    <div id="kubeDefEditor" ></div>
+    <button id="saveDefinitionBtn" class="btn">Save As</button>
+    <!-- <button id="uploadDefBtn" class="btn">Upload</button> -->
+  </div>
+</div>
+
+
+
+<div id="defErrorDialog" class="dialog">
+  <div class="dialog-content">
+    <span id="defErrorMessage" class="errorMessage"></span>
+    <button id="closeDefErrorDialog" class="btn">Close</button>
+  </div>
+</div>
+
+
+<!-- KUBE MODALS ENDS HERE -->
+
+
+    <div class="terminal-container">
+      <div class="kubernetes-info-wrapper">
+        <div style="height: 65px;">
+        <div class="tab-wrapper">
+          <span class="kube-info-wrapper-title tab active" data-target="pods">PODS &nbsp; <img src="./assets/icons/pods.png" alt="upload" width="15px"></span>
+          <span class="kube-info-wrapper-title tab" data-target="nodes">NODES &nbsp; <img src="./assets/icons/nodes.png" alt="upload" width="15px"></span>
+          <span class="kube-info-wrapper-title tab" data-target="services">SERVICES &nbsp; <img src="./assets/icons/services.png" alt="upload" width="15px"></span>
+          <span class="kube-info-wrapper-title tab" data-target="deployments">DEPLOYMENTS &nbsp; <img src="./assets/icons/deploy.png" alt="upload" width="15px"></span>
+          <span class="kube-info-wrapper-title tab" data-target="replicaset">REPLICASET &nbsp; <img src="./assets/icons/replicaset.png" alt="upload" width="15px"></span>
+        </div>
+        <div class="kubernetes-search-wrapper">
+          <span class="search-icon">&#128269;</span>
+          <input type="text" id="searchBox" placeholder="Search...">
+        </div>
+      </div>
+      <!-- <div class="kubernetes-search-wrapper">
+        <input type="text" id="searchBox" placeholder="Search..."> 
+      </div> -->
+
+        <div id="pods" class="tab-content active">
+          <div id="podsContent"class="toFind" > <span>Click "Get Pods" Button To Show The Pods</span> </div>
+        </div>
+        <div id="nodes" class="tab-content">
+          <div id="nodesContent" class="toFind"><span>Click "Get Nodes" Button To Show The Nodes</span></div>
+        </div>
+        <div id="services" class="tab-content">
+          <div id="servicesContent" class="toFind"><span>Click "Get Services" Button To Show The Services</span></div>
+        </div>
+        <div id="deployments" class="tab-content">
+          <div id="deploymentsContent" class="toFind"><span>Click "Get Deployment" Button To Show The Deployment</span></div>
+        </div>
+        <div id="replicaset" class="tab-content">
+          <div id="replicasetContent" class="toFind"><span>Click "Get Replicaset" Button To Show The Replicaset</span></div>
+        </div>
+      </div>
+      <div id="kubernetesTerminalContainer" class="terminal"></div>
+    </div>
+
+
+
+    <!-- <div id="kubernetesOutput" class="output"></div> -->
+    <div class="serviceAndInputWrapper">
+     <div class="input-field-wrapper" >
+      <div class="input-field">
+        <label for="deploymentNameInput" class="input-label">DEPLOYMENT NAME / SERVICE NAME</label>
+        <input type="text" id="deploymentName" placeholder="Enter Deployment/Service Name">
+      </div>
+      <div class="input-field">
+        <label for="imageNameInput" class="input-label">IMAGE NAME</label>
+        <input type="text" id="imageName" placeholder="Enter Image Name">
+      </div>
+      <div class="input-field">
+        <label for="podNameInput" class="input-label">POD NAME</label>
+        <input type="text" id="podName" placeholder="Enter Pod Name">
+      </div>
+      <div class="input-field">
+        <label for="portInput" class="input-label">PORT</label>
+        <input type="number" id="port" placeholder="Enter Port">
+      </div>
+
+      <div class="input-field">
+        <label for="replicaInput" class="input-label">SCALE REPLICAS</label>
+        <input type="number" id="Scalereplica" placeholder="Scale Replica">
+      </div>
+      
+      
+        <div style="display: flex; flex-direction: column; margin-top: 5px;">
+        <label for="type"class="input-label">TYPE:</label>
+        <select id="type" class="dropdown">
+          <option value="ClusterIP">ClusterIP</option>
+          <option value="NodePort">NodePort</option>
+          <option value="LoadBalancer">LoadBalancer</option>
+          <option value="ExternalName">ExternalName</option>
+        </select>
+      </div>
+
+      
+        
+    
+    
+      
+    </div>
+
+    </div>
+
+    <div class="def-editor">
+      <div class="input-field">
+        <input type="file" id="kubeFileUpload" accept=".yml, .yaml" style="display: none;">
+        <span id="kubeFileInput"></span>
+        
+        <label for="kubeFileUpload" class="custom-file-label btn">Upload
+          <img src="./assets/icons/upload.png" alt="upload" width="15px">
+        </label>
+        
+        <div class="nfs-wrapper">
+          <span id="kubeUploadedFileName">No file chosen</span>
+          <!-- <span id="defClearSelection">&#9003;</span> -->
+          <img src="./assets/icons/clear1.png" alt="clear" width="20px" id="defClearSelection"> 
+          <span style="color: white; font-size: smaller;">or</span>
+          <div id="kubeDefinitionSection">
+            <button id="createDefinitionFileBtn" class="btn">Create Kubernetes Definition File</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="kubeBtns">
+    <button id="kubectlGetPodsButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Kubectl Get Pods</button>
+    <button id="kubectlDescribePodButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Describe Pod</button>
+    <button id="kubectlDeletePodButton" class="btn warn-btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Delete Pod</button>
+    <button id="kubectlGetNodesButton"class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Kubectl Get Nodes</button>
+    <button id="minikubeStartButton"class="btn">Start Minikube</button>
+    <button id="kubectlGetServicesButton"class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Kubectl Get Services</button>
+    <button id="kubectltDeleteServicesButton"class="btn warn-btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Kubectl Delete Services</button>
+    <button id="kubectlCreateDeploymentButton"class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Kubectl Create Deployment</button>
+    <button id="kubectlGetDeploymentButton"class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Kubectl Get Deployment</button>
+    <button id="kubectlDeletetDeploymentButton"class="btn warn-btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Kubectl Delete Deployment</button>
+    <button id="kubectlExposeDeploymentButton"class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Kubectl Expose Deployment</button>
+    <button id="kubectlGetUrlButton"class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Get URL Expose Service</button>
+    <button id="kubectlRunDefFile"class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Kubectl Create Resource &#9096;</button>
+    <button id="kubectlApplyButton"class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Kubectl Apply &#9100;</button>
+    <button id="kubectlRolloutUndoButton"class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Kubectl Rollout Undo &#10226;</button>
+    <button id="kubectlGetNamespacesButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Get Namespaces</button>
+    <button id="kubectlGetEventsButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Get Events</button>
+    <button id="kubectlGetLogsButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Get Logs &#9113;</button>
+    <button id="kubectlGetAllButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Get All</button>
+    <button id="kubectlScaleReplicaButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Scale Replica &#8645;</button>
+    <button id="kubectlGetReplicasetButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Get Replicaset &#9112;</button>
+    <!-- <button id="kubectlDeleteReplicasetButton" class="btn"><span class="active-dot"></span><span class="pre-active-dot"></span>Delete Replicaset &#9112;</button> -->
+
+    <button id="clearKubernetesTerminalButton"class="btn clear-terminal-btn"><span class="terminal-active-dot"></span><span class="pre-terminal-active-dot"></span>Clear Kubernetes Terminal</button>
+
+
+
+
+
+  </div>
+ 
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="bottom-main-wrapper">
+      <div class="bottom-left-inner-wrapper">
+        
+        <div class="bottom-left-inner-wrapper-div">
+          <div style="margin-top: 10px; margin-left: 10px;">
+          <label for="imageNameInput" class="input-label" style="display: flex; position: relative; top: 0;" >WANT TO RUN YOUR OWN COMMAND?</label>
+      
+          <div class="custom-command input-field">
+            <input type="text" id="kubectlCommandInput" placeholder="Enter kubectl command">
+            <button id="runKubectlCommandButton" class="btn">Run Kubectl Command</button>
+          </div>
+          <span id="invalidCustomKubeCommand">Invalid command. Only Kubernetes commands are allowed.</span>
+          
+          <div class="login-logout-btn-wrapper">
+            <div class="minikube-wrapper">
+              <div class="power-button" id="powerButton">
+                <img src="assets/icons/power-off.png" alt="Power Off" id="powerIcon">
+              </div>
+                <div id="minikubeStatusOutput" class="minikube-output"></div>
+                <div id="loaderContainer" style="display: none;">
+                  
+                  <span id="loaderMessage">Please wait while Minikube is starting...</span>
+                  <div class="minikube-loader"></div>
+                </div>
+          
+              </div>
+          </div>
+        </div>
+        </div>
+      </div>
+      <!-- left bottom section for custom command direcct execution ENDS HERE ######-->
+      
+      
+      <!-- bottom right section for propper temporary error data  and some additional features STARTS HERE-->
+      <div class="bottom-right-inner-wrapper">
+      <div class="bottom-right-inner-wrapper-div" >
+        <!-- <div style="margin-top: 0.8em;"> -->
+          <div id="kube-error-log"></div><span class="error-zone-arrow" id="error-zone-arrow"></span> <span class="error-zone" id="error-zone">ERROR ZONE</span> 
+      <!-- </div> -->
+      </div>
+      </div>
+      </div>
+
+
+    
+  </div>
+
+<!--  ##################### Jenkins section  ################# -->
+
+<!-- Jenkins Configuration Section -->
+<!-- <div id="jenkinsDashboard" class="dashboard">
+<div>
+  <h3>Jenkins Configuration</h3>
+  <input id="jenkinsUrl" type="text" placeholder="Jenkins URL">
+  <input id="jenkinsApiToken" type="text" placeholder="Jenkins API Token">
+  <button id="saveJenkinsConfig">Save Jenkins Config</button>
+</div>
+ 
+<div>
+  <h3>Jenkins</h3>
+  <input id="jenkinsJobName" type="text" placeholder="Jenkins Job Name">
+  <button id="triggerJenkinsBuild">Trigger Build</button>
+  <button id="checkJenkinsStatus">Check Build Status</button>
+  <div id="jenkinsStatus"></div>
+</div>
+</div> -->
+
+  <script src="./node_modules/xterm/lib/xterm.js"></script>
+  <script src="scripts.js"></script>
+  
+  <script src="codemirror/codemirror.min.js"></script>
+  <script src="codemirror/yaml.min.js"></script>
+  <script src="kube.js"></script>
+</body>
+</html>

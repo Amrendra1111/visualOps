@@ -1,0 +1,35 @@
+{
+  "name": "visualOps",
+  "version": "1.0.0",
+  "description": "VisualOps provides a comprehensive solution for DevOps engineers, featuring integrated dashboards for both Docker and Kubernetes. It simplifies container management and orchestration tasks in a user-friendly interface on Ubuntu.",
+  "main": "main.js",
+  "author": "Amrendra Kumar Singh <amrendra1111singh@gmail.com>",
+  "homepage": "https://www.github.com/Amrendra1111",  
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "build": {
+    "appId": "com.startdust.visualops",
+    "productName": "VisualOps",
+    "linux": {
+      "target": ["deb", "AppImage"],
+      "category": "Utility",
+      "icon": "assets/icons",
+      "maintainer": "Amrendra Kumar Singh <amrendra1111singh@gmail.com>"
+    }
+  },
+  "dependencies": {
+    "@electron/remote": "^2.1.2",
+    "codemirror": "^6.0.1",
+    "sudo-prompt": "^9.2.1",
+    "xterm": "^5.3.0",
+    "xterm-addon-fit": "^0.8.0"
+  },
+  "devDependencies": {
+    "electron": "^31.1.0",
+    "electron-builder": "^24.13.3"
+  }
+}
+
